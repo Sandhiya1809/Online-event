@@ -1,0 +1,134 @@
+import java.sql.*;
+import java.util.Scanner;
+
+public class EventManagement {
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/event_db";
+    private static final String USER = "root";
+    private static final String PASS = "Abinaya#05";
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS)) {
+            while (true) {
+                System.out.println("\nEvent Management System");
+                System.out.println("1. Add Event");
+                System.out.println("2. Update Event");
+                System.out.println("3. Delete Event");
+                System.out.println("4. View Events");
+                System.out.println("5. Exit");
+                System.out.print("Choose an option: ");
+
+                int choice = scanner.nextInt();
+                scanner.nextLine(); // consume newline
+
+                switch (choice) {
+                    case 1:
+                        addEvent(conn, scanner);
+                        break;
+                    case 2:
+                        updateEvent(conn, scanner);
+                        break;
+                    case 3:
+                        deleteEvent(conn, scanner);
+                        break;
+                    case 4:
+                        viewEvents(conn);
+                        break;
+                    case 5:
+                        System.out.println("Exiting...");
+                        return;
+                    default:
+                        System.out.println("Invalid choice.");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void addEvent(Connection conn, Scanner scanner) throws SQLException {
+        System.out.print("Enter event name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter location: ");
+        String location = scanner.nextLine();
+        System.out.print("Enter date (YYYY-MM-DD): ");
+        String date = scanner.nextLine();
+        System.out.print("Enter description: ");
+        String description = scanner.nextLine();
+
+        String sql = "INSERT INTO events (name, location, date, description) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            stmt.setString(2, location);
+            stmt.setDate(3, Date.valueOf(date));
+            stmt.setString(4, description);
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Event added successfully.");
+            }
+        }
+    }
+
+    private static void updateEvent(Connection conn, Scanner scanner) throws SQLException {
+        System.out.print("Enter event ID to update: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+
+        System.out.print("Enter new name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter new location: ");
+        String location = scanner.nextLine();
+        System.out.print("Enter new date (YYYY-MM-DD): ");
+        String date = scanner.nextLine();
+        System.out.print("Enter new description: ");
+        String description = scanner.nextLine();
+
+        String sql = "UPDATE events SET name=?, location=?, date=?, description=? WHERE id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            stmt.setString(2, location);
+            stmt.setDate(3, Date.valueOf(date));
+            stmt.setString(4, description);
+            stmt.setInt(5, id);
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Event updated successfully.");
+            } else {
+                System.out.println("Event not found.");
+            }
+        }
+    }
+
+    private static void deleteEvent(Connection conn, Scanner scanner) throws SQLException {
+        System.out.print("Enter event ID to delete: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+
+        String sql = "DELETE FROM events WHERE id=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Event deleted successfully.");
+            } else {
+                System.out.println("Event not found.");
+            }
+        }
+    }
+
+    private static void viewEvents(Connection conn) throws SQLException {
+        String sql = "SELECT * FROM events";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                System.out.println("ID: " + rs.getInt("id"));
+                System.out.println("Name: " + rs.getString("name"));
+                System.out.println("Location: " + rs.getString("location"));
+                System.out.println("Date: " + rs.getDate("date"));
+                System.out.println("Description: " + rs.getString("description"));
+                System.out.println("---------------------------");
+            }
+        }
+    }
+}
